@@ -1,0 +1,175 @@
+## Week 2 - Receipt Analyser - Initial Prompt
+
+Build a "Receipt Analyser" web app using React.
+This is Week 2 of "52 apps in 52 weeks before
+I turn 52" by Hey I'm Papa.
+
+This is a standalone React app with its own
+GitHub repository, deployable to Vercel.
+
+CORE FLOW:
+1. User opens app on phone or desktop
+2. Camera view appears (use device camera on
+   mobile, webcam on desktop for testing)
+3. User captures a photo of a receipt
+4. App sends image to Claude AI vision API
+   (claude-sonnet-4-20250514) for extraction
+5. Extracted data displays for review and editing
+6. User confirms and saves to Supabase
+7. Basic reporting view shows spending over time
+
+CAMERA CAPTURE:
+- Use browser MediaDevices API for camera access
+- On mobile default to rear camera
+- On desktop use webcam (for testing)
+- Show live camera preview
+- Capture button takes the photo
+- Show captured image preview before processing
+- Allow retake if not happy with the image
+
+CLAUDE AI EXTRACTION:
+Use the Anthropic API with vision to extract
+the following fields from the receipt image:
+
+- Merchant name
+- Date of purchase (format: DD/MM/YYYY)
+- Line items, each containing:
+  - Product name
+  - Quantity
+  - Unit price
+  - Total price
+  - GST amount (if shown)
+  - Suggested category (from the list below)
+- Receipt total
+- Total GST
+- Payment method (if visible)
+
+CATEGORIES (fixed list, AI pre-selects,
+user can override via dropdown):
+Groceries, Fruit & Veg, Meat & Seafood,
+Deli & Bakery, Dairy & Eggs, Frozen Foods,
+Snacks & Confectionery, Beverages, Alcohol,
+Household & Cleaning, Health & Beauty,
+Baby & Kids, Pet Supplies, Clothing,
+Electronics, Dining Out, Fuel, Other
+
+Prompt Claude to return ONLY valid JSON
+in this structure:
+{
+  "merchant": "",
+  "date": "",
+  "paymentMethod": "",
+  "receiptTotal": 0,
+  "totalGST": 0,
+  "items": [
+    {
+      "productName": "",
+      "quantity": 0,
+      "unitPrice": 0,
+      "totalPrice": 0,
+      "gst": 0,
+      "suggestedCategory": ""
+    }
+  ]
+}
+
+REVIEW & EDIT SCREEN:
+After extraction display all fields in an
+editable form before saving:
+- Merchant name (editable text)
+- Date (editable)
+- Each line item shown in a table
+- Category per item shown as dropdown
+  pre-selected by Claude, user can change
+- User can delete individual line items
+- Totals shown at bottom
+- "Save to Supabase" button
+- "Retake" button to go back to camera
+
+SUPABASE INTEGRATION:
+Create two tables:
+
+Table 1 - receipts:
+- id, merchant, date, receipt_total,
+  total_gst, payment_method,
+  created_at, image_url (optional)
+
+Table 2 - receipt_items:
+- id, receipt_id (foreign key),
+  product_name, quantity, unit_price,
+  total_price, gst, category, created_at
+
+After building, provide plain English
+step-by-step instructions for how to:
+1. Create a free Supabase project
+2. Create these two tables
+3. Get the Supabase URL and anon key
+4. Where to paste them in the app
+
+REPORTING VIEW:
+A separate tab called "Reports"
+- Bar or line chart showing total spending
+  by category over time
+- Date range filter (last 7 days, 30 days,
+  90 days, all time)
+- Summary cards at top showing:
+  - Total spent in period
+  - Most spent category
+  - Number of receipts scanned
+- Use Recharts for the chart
+
+ABOUT THIS BUILD PAGE:
+Include the standard "About This Build"
+second page/tab with these sections:
+- The Problem
+- The Approach
+- The Prompt
+- What Got Built
+- What I'd Do Differently
+- GitHub Link
+All fields editable and saved to localStorage.
+
+Pre-populate with:
+- Problem: "Supermarket receipts contain
+  detailed product data that your bank
+  statement never shows. I wanted to see
+  exactly what I spend on without connecting
+  my bank account."
+- Approach: "Camera capture on mobile,
+  Claude AI vision to extract and categorise
+  line items, Supabase to store history,
+  Recharts for spending trends."
+
+DESIGN:
+- Dark mode, minimal, clean card-based layout
+- Mobile-first but works on desktop
+- Include Google Analytics GA4 tracking
+- After building provide plain English
+  instructions to activate GA4
+
+ADDITIONAL FILES TO CREATE:
+
+1. PROMPTS.txt
+   Create a file called PROMPTS.txt in the
+   root of the project. Inside it, paste the
+   exact prompt used to generate this app
+   (i.e. this prompt in full). Label it clearly:
+   "## Week 2 - Receipt Analyser - Initial Prompt"
+
+2. README.md
+   Create a README.md that includes:
+   - App name and description
+   - Week number and project context
+     ("Part of 52 apps in 52 weeks before
+     I turn 52 — Hey I'm Papa")
+   - GitHub link placeholder
+   - How to run locally (npm install,
+     npm run dev)
+   - How to set up environment variables
+     (.env file with Anthropic API key
+     and Supabase credentials)
+   - Reference to PROMPTS.txt with this line:
+     "The prompt used to generate this app
+     is documented in PROMPTS.txt"
+   - Link to the 52 Builds Tracker repo
+     (to be added later)
