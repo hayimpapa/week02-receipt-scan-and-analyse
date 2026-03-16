@@ -8,11 +8,18 @@ GitHub: [https://github.com/hayimpapa/week02-receipt-scan-and-analyse](https://g
 
 ---
 
+## Guest vs Owner Mode
+
+The app has two modes:
+
+- **Guest mode** (default): The full UI is visible and explorable, but scanning and capturing receipts is disabled. Clicking Scan or Capture shows a friendly message directing you to run the app locally.
+- **Owner mode**: Click the lock icon in the top-right corner of the navbar, enter the owner password, and unlock full scanning and Supabase saving. The session is stored in `sessionStorage` and clears automatically when the browser tab closes.
+
 ## How It Works
 
 1. Open the app on your phone or desktop
 2. Use the camera to capture a receipt photo
-3. Claude AI extracts merchant, items, prices, and categories
+3. Claude AI extracts merchant, items, prices, and categories (owner mode required)
 4. Review and edit the extracted data
 5. Save to Supabase for history and reporting
 6. View spending trends in the Reports tab
@@ -28,10 +35,11 @@ npm run dev
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+### Frontend variables (local development only)
+
+Create a `.env` file in the project root for local development:
 
 ```
-VITE_ANTHROPIC_API_KEY=your-anthropic-api-key-here
 VITE_SUPABASE_URL=your-supabase-url-here
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 VITE_GA4_MEASUREMENT_ID=your-ga4-measurement-id-here
@@ -39,13 +47,25 @@ VITE_GA4_MEASUREMENT_ID=your-ga4-measurement-id-here
 
 See `.env.example` for the template.
 
+### Vercel server-side environment variables
+
+These must be added in the Vercel dashboard under **Settings > Environment Variables**. They are used only by the serverless functions and are never exposed to the browser:
+
+| Variable | Description |
+|---|---|
+| `ANTHROPIC_API_KEY` | Your Anthropic API key for Claude AI |
+| `OWNER_PASSWORD` | The password required to unlock owner mode |
+| `SESSION_SECRET` | A random string used to sign session tokens |
+
+**No `.env` file is needed for the live deployment** — only set these in the Vercel dashboard. For local development with `vercel dev`, you can add them to a `.env.local` file (which is gitignored by Vercel by default).
+
 ### Getting Your API Keys
 
 **Anthropic API Key:**
 1. Go to [console.anthropic.com](https://console.anthropic.com)
 2. Sign up or log in
 3. Go to API Keys and create a new key
-4. Copy the key into `VITE_ANTHROPIC_API_KEY`
+4. Add it as `ANTHROPIC_API_KEY` in Vercel environment variables
 
 **Supabase Setup:**
 See the Supabase Setup section below.
@@ -130,8 +150,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 1. Push this repo to GitHub
 2. Go to [vercel.com](https://vercel.com) and import the repository
-3. Add your environment variables in the Vercel dashboard under Settings > Environment Variables
+3. Add the following environment variables in the Vercel dashboard under **Settings > Environment Variables**:
+   - `ANTHROPIC_API_KEY` — your Anthropic API key
+   - `OWNER_PASSWORD` — the password for owner mode
+   - `SESSION_SECRET` — a random string (e.g. generate one with `openssl rand -hex 32`)
+   - `VITE_SUPABASE_URL` — your Supabase project URL
+   - `VITE_SUPABASE_ANON_KEY` — your Supabase anon key
+   - `VITE_GA4_MEASUREMENT_ID` — your GA4 measurement ID
 4. Deploy
+
+The `api/` directory is automatically detected by Vercel as serverless functions. No additional configuration is needed.
 
 ## Prompt
 

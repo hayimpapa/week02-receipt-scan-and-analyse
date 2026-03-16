@@ -4,15 +4,23 @@ import ReceiptReview from '../components/ReceiptReview';
 import { extractReceiptData } from '../services/claude';
 import { saveReceipt, isSupabaseConfigured } from '../services/supabase';
 import { trackEvent } from '../services/analytics';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ScanPage() {
+  const { isOwner } = useAuth();
   const [stage, setStage] = useState('camera'); // camera | processing | review | saved
   const [receiptData, setReceiptData] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showGuestMessage, setShowGuestMessage] = useState(false);
 
   const handleCapture = async (base64Data, previewUrl) => {
+    if (!isOwner) {
+      setShowGuestMessage(true);
+      return;
+    }
+
     setImagePreview(previewUrl);
     setStage('processing');
     setError(null);
@@ -106,20 +114,25 @@ export default function ScanPage() {
         </div>
       )}
 
+      {showGuestMessage && (
+        <div className="modal-overlay" onClick={() => setShowGuestMessage(false)}>
+          <div className="modal-content guest-message" onClick={(e) => e.stopPropagation()}>
+            <p>
+              This live demo requires owner login.
+              Want to run it yourself? See <strong>README.md</strong> for local setup instructions.
+            </p>
+            <button className="btn btn-primary" onClick={() => setShowGuestMessage(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {!isSupabaseConfigured() && stage === 'camera' && (
         <div className="config-notice">
           <p>
             <strong>Note:</strong> Supabase is not configured. Receipts won't be saved.
             See README.md for setup instructions.
-          </p>
-        </div>
-      )}
-
-      {!import.meta.env.VITE_ANTHROPIC_API_KEY && stage === 'camera' && (
-        <div className="config-notice">
-          <p>
-            <strong>Note:</strong> Anthropic API key is not configured. Receipt scanning won't work.
-            Add VITE_ANTHROPIC_API_KEY to your .env file.
           </p>
         </div>
       )}

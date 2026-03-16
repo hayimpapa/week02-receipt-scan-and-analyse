@@ -173,3 +173,97 @@ ADDITIONAL FILES TO CREATE:
      is documented in PROMPTS.txt"
    - Link to the 52 Builds Tracker repo
      (to be added later)
+
+## Week 2 - Receipt Analyser - Update 1 - Owner Auth and Proxy
+
+Add a secure owner mode to the Receipt
+Scanner & Analyser app with two modes:
+Guest and Owner.
+
+GUEST MODE (default, no login):
+- Full UI is visible and explorable
+- When user clicks Scan or Capture,
+  show a friendly message instead:
+  "This live demo requires owner login.
+  Want to run it yourself? See README.md
+  for local setup instructions."
+- Supabase warning message stays as is
+- No other restrictions
+
+OWNER MODE (password protected):
+- Small, subtle lock icon button in the
+  top right corner of the app
+- Clicking it opens a minimal password
+  modal/overlay
+- Owner enters password, clicks Unlock
+- If correct, session token is stored
+  in sessionStorage (clears when browser
+  tab closes)
+- In owner mode, full scanning and
+  Supabase saving works normally
+- Lock icon changes to indicate
+  logged-in state (e.g. unlocked icon)
+- No logout needed - closing the tab
+  ends the session
+
+SERVERLESS PROXY FOR ANTHROPIC API:
+Create a Vercel serverless function at:
+api/scan.js
+
+This function should:
+- Accept a POST request with the
+  receipt image (base64) in the body
+- Check for a valid session token
+  in the request header
+- If token invalid or missing,
+  return 401 with message:
+  "Unauthorised - owner login required"
+- If token valid, call the Anthropic
+  API with the image using the
+  ANTHROPIC_API_KEY environment variable
+  (server-side only, never exposed
+  to the browser)
+- Return the extracted receipt JSON
+  to the frontend
+
+PASSWORD VALIDATION:
+Create a second serverless function at:
+api/auth.js
+
+This function should:
+- Accept a POST request with the
+  password in the body
+- Compare against the OWNER_PASSWORD
+  environment variable (server-side only)
+- If correct, return a signed session
+  token (a simple UUID or hash is fine)
+- If incorrect, return 401
+
+The frontend stores this token in
+sessionStorage and sends it as a
+header with every request to api/scan.js
+
+ENVIRONMENT VARIABLES NEEDED
+(server-side only, never in .env
+or exposed to browser):
+- ANTHROPIC_API_KEY
+- OWNER_PASSWORD
+- SESSION_SECRET (a random string
+  used to sign tokens)
+
+These must only ever be used in the
+serverless functions, never imported
+into any frontend React code.
+
+Update README.md to include:
+- Explanation of guest vs owner mode
+- List of required Vercel environment
+  variables and where to add them
+- Note that no .env file is needed
+  for the live deployment, only for
+  local development
+
+Update PROMPTS.txt with this prompt
+under the label:
+"## Week 2 - Receipt Analyser -
+Update 1 - Owner Auth and Proxy"

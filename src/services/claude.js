@@ -1,4 +1,4 @@
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
+import { getSessionToken } from './auth';
 
 const CATEGORIES = [
   'Groceries', 'Fruit & Veg', 'Meat & Seafood',
@@ -12,8 +12,9 @@ const CATEGORIES = [
 export { CATEGORIES };
 
 export async function extractReceiptData(base64Image, mimeType = 'image/jpeg') {
-  if (!ANTHROPIC_API_KEY) {
-    throw new Error('Anthropic API key is not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file.');
+  const token = getSessionToken();
+  if (!token) {
+    throw new Error('Owner login required to scan receipts.');
   }
 
   const prompt = `You are a receipt data extraction assistant. Analyse this receipt image and extract the data into JSON format.
@@ -53,42 +54,22 @@ Important:
 - GST amounts should be 0 if not explicitly shown on receipt
 - Use the category list provided — pick the best match for each item`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/api/scan', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
+      'x-session-token': token,
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mimeType,
-                data: base64Image,
-              },
-            },
-            {
-              type: 'text',
-              text: prompt,
-            },
-          ],
-        },
-      ],
+      image: base64Image,
+      mimeType,
+      prompt,
     }),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
+    throw new Error(errorData.error || `API request failed with status ${response.status}`);
   }
 
   const data = await response.json();
