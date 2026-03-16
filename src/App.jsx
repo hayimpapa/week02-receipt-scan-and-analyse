@@ -7,7 +7,7 @@ import './App.css';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/week02">
       <div className="app">
         <NavBar />
         <main className="main-content">
