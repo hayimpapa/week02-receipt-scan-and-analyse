@@ -9,6 +9,18 @@ export const supabase = supabaseUrl && supabaseAnonKey
 
 export const isSupabaseConfigured = () => !!supabase;
 
+function convertDateToISO(dateStr) {
+  if (!dateStr) return dateStr;
+  // Convert DD/MM/YYYY to YYYY-MM-DD for PostgreSQL
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, day, month, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  // Already in YYYY-MM-DD or other format, return as-is
+  return dateStr;
+}
+
 export async function saveReceipt(receiptData) {
   if (!supabase) {
     throw new Error('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file.');
@@ -18,7 +30,7 @@ export async function saveReceipt(receiptData) {
     .from('receipts')
     .insert({
       merchant: receiptData.merchant,
-      date: receiptData.date,
+      date: convertDateToISO(receiptData.date),
       receipt_total: receiptData.receiptTotal,
       total_gst: receiptData.totalGST,
       payment_method: receiptData.paymentMethod,
