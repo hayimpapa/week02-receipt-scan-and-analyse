@@ -459,6 +459,99 @@
   margin-top: 0.5rem;
 }
 
+/* Nav right section */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Lock button */
+.btn-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-lock:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-lock.unlocked {
+  color: var(--success);
+  border-color: var(--success);
+  cursor: default;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+.modal-content h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.modal-content input {
+  margin-bottom: 0.75rem;
+}
+
+.modal-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+/* Guest message */
+.guest-message {
+  text-align: center;
+  max-width: 400px;
+}
+
+.guest-message p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.guest-message .btn {
+  min-width: 100px;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .main-content {
