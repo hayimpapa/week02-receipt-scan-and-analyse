@@ -450,13 +450,27 @@
   margin-bottom: 1rem;
 }
 
-.about-page textarea,
-.about-page input {
-  margin-top: 0.25rem;
+.about-text {
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0.25rem 0 0;
 }
 
-.about-page .btn-primary {
+.about-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
+.about-repo-btn {
+  display: inline-block;
   margin-top: 0.5rem;
+  text-decoration: none;
+  text-align: center;
 }
 
 /* Nav right section */
