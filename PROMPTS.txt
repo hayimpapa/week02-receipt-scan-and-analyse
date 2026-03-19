@@ -267,3 +267,92 @@ Update PROMPTS.txt with this prompt
 under the label:
 "## Week 2 - Receipt Analyser -
 Update 1 - Owner Auth and Proxy"
+
+## Week 2 - Receipt Analyser - Update 2 - Move Supabase server-side
+
+Move all Supabase database calls from
+the frontend React code into the
+existing serverless function api/scan.js
+
+GOAL:
+No Supabase keys should exist in any
+frontend code or VITE_ environment
+variables. All database operations
+happen server-side only.
+
+ENVIRONMENT VARIABLES TO USE
+(server-side only, already in Vercel):
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+
+CHANGES NEEDED:
+
+1. UPDATE api/scan.js
+After successfully extracting receipt
+data from Anthropic API, also save
+the result to Supabase in the same
+serverless function.
+Save to two tables as before:
+Table: receipts
+Fields: merchant, date, receipt_total,
+total_gst, payment_method, created_at
+Table: receipt_items
+Fields: receipt_id (foreign key),
+product_name, quantity, unit_price,
+total_price, gst, category, created_at
+Return both the extracted receipt JSON
+AND the saved receipt id back to the
+frontend so it can display the results.
+Install @supabase/supabase-js in the
+serverless function if not already
+available.
+
+2. CREATE api/receipts.js
+A new serverless function to handle
+fetching saved receipts for the
+Reports tab.
+This function should:
+- Accept a GET request with optional
+  date range query parameters:
+  ?range=7d or 30d or 90d or all
+- Check for valid session token
+  in request header (same auth
+  as api/scan.js)
+- Query Supabase for receipts
+  and their items within the
+  date range
+- Return the data as JSON
+  to the frontend
+
+3. UPDATE FRONTEND
+Remove all direct Supabase client
+calls from React components.
+Remove VITE_SUPABASE_URL and
+VITE_SUPABASE_ANON_KEY from
+any .env files and frontend code.
+Update the Reports tab to fetch
+data from api/receipts.js instead
+of directly from Supabase.
+The session token stored in
+sessionStorage should be sent
+as a header with all requests
+to api/ functions, same as
+the existing scan flow.
+
+4. REMOVE from frontend .env:
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+These should no longer exist
+anywhere in frontend code.
+
+5. UPDATE README.md
+Remove VITE_SUPABASE_URL and
+VITE_SUPABASE_ANON_KEY from
+the environment variables section.
+Add SUPABASE_URL and SUPABASE_ANON_KEY
+to the Vercel server-side environment
+variables list instead.
+Update PROMPTS.txt with this prompt
+under the label:
+"## Week 2 - Receipt Analyser -
+Update 2 - Move Supabase server-side"

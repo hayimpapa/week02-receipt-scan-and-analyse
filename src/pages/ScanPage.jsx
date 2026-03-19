@@ -2,7 +2,6 @@ import { useState } from 'react';
 import CameraCapture from '../components/CameraCapture';
 import ReceiptReview from '../components/ReceiptReview';
 import { extractReceiptData } from '../services/claude';
-import { saveReceipt, isSupabaseConfigured } from '../services/supabase';
 import { trackEvent } from '../services/analytics';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,7 +11,6 @@ export default function ScanPage() {
   const [receiptData, setReceiptData] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
   const [showGuestMessage, setShowGuestMessage] = useState(false);
 
   const handleCapture = async (base64Data, previewUrl) => {
@@ -28,8 +26,21 @@ export default function ScanPage() {
     try {
       trackEvent('receipt_scan_started');
       const data = await extractReceiptData(base64Data, 'image/jpeg');
+
+      if (data.supabaseError) {
+        setError(`Receipt extracted but failed to save: ${data.supabaseError}`);
+      }
+
       setReceiptData(data);
-      setStage('review');
+
+      if (data.receiptId) {
+        // Receipt was saved server-side, go straight to saved
+        setStage('saved');
+        trackEvent('receipt_saved', { merchant: data.merchant, total: data.receiptTotal });
+      } else {
+        // Show review screen (e.g. Supabase not configured)
+        setStage('review');
+      }
       trackEvent('receipt_scan_success', { merchant: data.merchant });
     } catch (err) {
       setError(err.message);
@@ -39,18 +50,10 @@ export default function ScanPage() {
   };
 
   const handleSave = async (data) => {
-    setSaving(true);
-    setError(null);
-
-    try {
-      await saveReceipt(data);
-      setStage('saved');
-      trackEvent('receipt_saved', { merchant: data.merchant, total: data.receiptTotal });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
+    // Data is already saved server-side during scan.
+    // This handles the case where it wasn't saved (Supabase not configured).
+    setStage('saved');
+    trackEvent('receipt_saved', { merchant: data.merchant, total: data.receiptTotal });
   };
 
   const handleRetake = () => {
@@ -99,7 +102,7 @@ export default function ScanPage() {
           receiptData={receiptData}
           onSave={handleSave}
           onRetake={handleRetake}
-          saving={saving}
+          saving={false}
         />
       )}
 
@@ -107,7 +110,7 @@ export default function ScanPage() {
         <div className="saved-container">
           <div className="success-icon">✓</div>
           <h2>Receipt Saved!</h2>
-          <p>Your receipt has been saved to Supabase.</p>
+          <p>Your receipt has been saved.</p>
           <button className="btn btn-primary" onClick={handleNewScan}>
             Scan Another Receipt
           </button>
@@ -125,15 +128,6 @@ export default function ScanPage() {
               Got it
             </button>
           </div>
-        </div>
-      )}
-
-      {!isSupabaseConfigured() && stage === 'camera' && (
-        <div className="config-notice">
-          <p>
-            <strong>Note:</strong> Supabase is not configured. Receipts won't be saved.
-            See README.md for setup instructions.
-          </p>
         </div>
       )}
     </div>

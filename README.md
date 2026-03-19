@@ -40,8 +40,6 @@ npm run dev
 Create a `.env` file in the project root for local development:
 
 ```
-VITE_SUPABASE_URL=your-supabase-url-here
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 VITE_GA4_MEASUREMENT_ID=your-ga4-measurement-id-here
 ```
 
@@ -56,6 +54,8 @@ These must be added in the Vercel dashboard under **Settings > Environment Varia
 | `ANTHROPIC_API_KEY` | Your Anthropic API key for Claude AI |
 | `OWNER_PASSWORD` | The password required to unlock owner mode |
 | `SESSION_SECRET` | A random string used to sign session tokens |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Your Supabase anon public key |
 
 **No `.env` file is needed for the live deployment** — only set these in the Vercel dashboard. For local development with `vercel dev`, you can add them to a `.env.local` file (which is gitignored by Vercel by default).
 
@@ -124,17 +124,8 @@ CREATE POLICY "Allow all operations on receipt_items" ON receipt_items FOR ALL U
 
 1. In your Supabase dashboard, click **Settings** (gear icon) in the left sidebar
 2. Click **API** under Configuration
-3. Copy the **Project URL** — paste it as `VITE_SUPABASE_URL` in your `.env` file
-4. Copy the **anon public** key — paste it as `VITE_SUPABASE_ANON_KEY` in your `.env` file
-
-### 4. Where to Paste Them
-
-Open (or create) the `.env` file in the root of this project and add:
-
-```
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
-```
+3. Copy the **Project URL** — add it as `SUPABASE_URL` in Vercel environment variables
+4. Copy the **anon public** key — add it as `SUPABASE_ANON_KEY` in Vercel environment variables
 
 ## Google Analytics GA4 Setup
 
@@ -154,8 +145,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
    - `ANTHROPIC_API_KEY` — your Anthropic API key
    - `OWNER_PASSWORD` — the password for owner mode
    - `SESSION_SECRET` — a random string (e.g. generate one with `openssl rand -hex 32`)
-   - `VITE_SUPABASE_URL` — your Supabase project URL
-   - `VITE_SUPABASE_ANON_KEY` — your Supabase anon key
+   - `SUPABASE_URL` — your Supabase project URL
+   - `SUPABASE_ANON_KEY` — your Supabase anon key
    - `VITE_GA4_MEASUREMENT_ID` — your GA4 measurement ID
 4. Deploy
 
