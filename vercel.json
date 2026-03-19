@@ -1,10 +1,8 @@
 {
-  "redirects": [
-    { "source": "/", "destination": "/week02", "permanent": false }
-  ],
   "rewrites": [
     { "source": "/week02/assets/:path*", "destination": "/assets/:path*" },
     { "source": "/week02/:path*", "destination": "/index.html" },
-    { "source": "/week02", "destination": "/index.html" }
+    { "source": "/week02", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

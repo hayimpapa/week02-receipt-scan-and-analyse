@@ -9,7 +9,7 @@ import './App.css';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+      <BrowserRouter basename={window.location.pathname.startsWith('/week02') ? '/week02' : ''}>
         <div className="app">
           <NavBar />
           <main className="main-content">
