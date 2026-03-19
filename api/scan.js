@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
 function validateToken(token, sessionSecret) {
   if (!token || !sessionSecret) return false;
@@ -10,6 +11,59 @@ function validateToken(token, sessionSecret) {
     .update(uuid)
     .digest('hex');
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+
+function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+function convertDateToISO(dateStr) {
+  if (!dateStr) return dateStr;
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, day, month, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return dateStr;
+}
+
+async function saveReceiptToSupabase(supabase, receiptData) {
+  const { data: receipt, error: receiptError } = await supabase
+    .from('receipts')
+    .insert({
+      merchant: receiptData.merchant,
+      date: convertDateToISO(receiptData.date),
+      receipt_total: receiptData.receiptTotal,
+      total_gst: receiptData.totalGST,
+      payment_method: receiptData.paymentMethod,
+    })
+    .select()
+    .single();
+
+  if (receiptError) throw receiptError;
+
+  const items = (receiptData.items || []).map((item) => ({
+    receipt_id: receipt.id,
+    product_name: item.productName,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    total_price: item.totalPrice,
+    gst: item.gst,
+    category: item.suggestedCategory,
+  }));
+
+  if (items.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('receipt_items')
+      .insert(items);
+
+    if (itemsError) throw itemsError;
+  }
+
+  return receipt;
 }
 
 export default async function handler(req, res) {
@@ -77,7 +131,47 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    return res.status(200).json(data);
+
+    // Extract the receipt JSON from Claude's response
+    const textContent = data.content.find((c) => c.type === 'text');
+    if (!textContent) {
+      return res.status(200).json(data);
+    }
+
+    let jsonStr = textContent.text.trim();
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1].trim();
+    }
+
+    let receiptData;
+    try {
+      receiptData = JSON.parse(jsonStr);
+    } catch {
+      // If we can't parse JSON, return the raw Claude response
+      return res.status(200).json(data);
+    }
+
+    // Save to Supabase if configured
+    let savedReceipt = null;
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        savedReceipt = await saveReceiptToSupabase(supabase, receiptData);
+      } catch (err) {
+        // Return the extracted data even if Supabase save fails, but include the error
+        return res.status(200).json({
+          receipt: receiptData,
+          receiptId: null,
+          supabaseError: err.message || 'Failed to save to Supabase',
+        });
+      }
+    }
+
+    return res.status(200).json({
+      receipt: receiptData,
+      receiptId: savedReceipt?.id || null,
+    });
   } catch {
     return res.status(500).json({ error: 'Failed to call Anthropic API' });
   }

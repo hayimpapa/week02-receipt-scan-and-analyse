@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
-import { getReceipts, isSupabaseConfigured } from '../services/supabase';
+import { getSessionToken } from '../services/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 const DATE_RANGES = [
-  { label: 'Last 7 days', days: 7 },
-  { label: 'Last 30 days', days: 30 },
-  { label: 'Last 90 days', days: 90 },
-  { label: 'All time', days: null },
+  { label: 'Last 7 days', value: '7d' },
+  { label: 'Last 30 days', value: '30d' },
+  { label: 'Last 90 days', value: '90d' },
+  { label: 'All time', value: 'all' },
 ];
 
 const CHART_COLORS = [
@@ -20,21 +21,34 @@ const CHART_COLORS = [
 ];
 
 export default function ReportsPage() {
+  const { isOwner } = useAuth();
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRange, setSelectedRange] = useState(DATE_RANGES[1]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
+    if (!isOwner) {
       setLoading(false);
       return;
     }
 
     const fetchReceipts = async () => {
       try {
-        const data = await getReceipts();
-        setReceipts(data);
+        const token = getSessionToken();
+        const response = await fetch(`/api/receipts?range=${selectedRange.value}`, {
+          headers: {
+            'x-session-token': token,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Failed to fetch receipts (${response.status})`);
+        }
+
+        const data = await response.json();
+        setReceipts(data.receipts || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -42,26 +56,16 @@ export default function ReportsPage() {
       }
     };
     fetchReceipts();
-  }, []);
-
-  const filteredReceipts = useMemo(() => {
-    if (!selectedRange.days) return receipts;
-
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - selectedRange.days);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
-
-    return receipts.filter((r) => r.date >= cutoffStr);
-  }, [receipts, selectedRange]);
+  }, [isOwner, selectedRange]);
 
   const stats = useMemo(() => {
-    const totalSpent = filteredReceipts.reduce(
+    const totalSpent = receipts.reduce(
       (sum, r) => sum + (parseFloat(r.receipt_total) || 0),
       0
     );
 
     const categoryTotals = {};
-    filteredReceipts.forEach((r) => {
+    receipts.forEach((r) => {
       (r.receipt_items || []).forEach((item) => {
         const cat = item.category || 'Other';
         categoryTotals[cat] = (categoryTotals[cat] || 0) + (parseFloat(item.total_price) || 0);
@@ -73,23 +77,23 @@ export default function ReportsPage() {
 
     return {
       totalSpent: totalSpent.toFixed(2),
-      receiptCount: filteredReceipts.length,
+      receiptCount: receipts.length,
       topCategory: topCategory ? topCategory[0] : 'N/A',
       topCategoryAmount: topCategory ? topCategory[1].toFixed(2) : '0.00',
       categoryData: Object.entries(categoryTotals)
         .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
         .sort((a, b) => b.value - a.value),
     };
-  }, [filteredReceipts]);
+  }, [receipts]);
 
-  if (!isSupabaseConfigured()) {
+  if (!isOwner) {
     return (
       <div className="reports-page">
         <h2>Reports</h2>
         <div className="config-notice">
           <p>
-            Supabase is not configured. Connect Supabase to see spending reports.
-            See README.md for setup instructions.
+            Owner login required to view reports.
+            Click the lock icon in the top-right corner to log in.
           </p>
         </div>
       </div>
@@ -124,7 +128,11 @@ export default function ReportsPage() {
           <button
             key={range.label}
             className={`btn btn-filter ${selectedRange.label === range.label ? 'active' : ''}`}
-            onClick={() => setSelectedRange(range)}
+            onClick={() => {
+              setSelectedRange(range);
+              setLoading(true);
+              setError(null);
+            }}
           >
             {range.label}
           </button>

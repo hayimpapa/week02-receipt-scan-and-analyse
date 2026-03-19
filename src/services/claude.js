@@ -73,13 +73,23 @@ Important:
   }
 
   const data = await response.json();
-  const textContent = data.content.find((c) => c.type === 'text');
+
+  // The server now returns { receipt, receiptId } after parsing and saving
+  if (data.receipt) {
+    return {
+      ...data.receipt,
+      receiptId: data.receiptId || null,
+      supabaseError: data.supabaseError || null,
+    };
+  }
+
+  // Fallback for raw Anthropic response (shouldn't happen normally)
+  const textContent = data.content?.find((c) => c.type === 'text');
 
   if (!textContent) {
     throw new Error('No text response from Claude');
   }
 
-  // Extract JSON from the response (handle potential markdown wrapping)
   let jsonStr = textContent.text.trim();
   const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
