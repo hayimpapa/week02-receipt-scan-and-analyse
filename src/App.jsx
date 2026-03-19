@@ -9,7 +9,7 @@ import './App.css';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/week02">
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <div className="app">
           <NavBar />
           <main className="main-content">
