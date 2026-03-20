@@ -18,6 +18,7 @@ export default function NavBar() {
           <div className="nav-links">
             <NavLink to="/" end>Scan</NavLink>
             <NavLink to="/reports">Reports</NavLink>
+            <NavLink to="/my-receipts">My Receipts</NavLink>
             <NavLink to="/about">About</NavLink>
           </div>
           <button

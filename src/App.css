@@ -566,6 +566,278 @@
   min-width: 100px;
 }
 
+/* My Receipts page */
+.my-receipts-page h2 {
+  margin-bottom: 1rem;
+}
+
+.owner-required {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.receipts-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 0.45rem 0.75rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.filter-search {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.45rem 0.75rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.filter-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.filter-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.receipts-loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.receipts-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Receipts table */
+.receipts-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
+.receipts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 600px;
+}
+
+.receipts-table thead {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.receipts-table th {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.receipts-table th.sortable {
+  cursor: pointer;
+}
+
+.receipts-table th.sortable:hover {
+  color: var(--text-primary);
+}
+
+.sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.4;
+  margin-left: 0.2rem;
+}
+
+.sort-icon--active {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.receipts-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.receipts-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.receipts-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.receipts-table tbody tr.row-expanded {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.receipts-table td {
+  padding: 0.65rem 0.85rem;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.cell-date {
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.cell-merchant {
+  font-weight: 600;
+}
+
+.cell-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cell-payment {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+/* Small action buttons */
+.btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Expanded detail row */
+.row-detail td {
+  padding: 0;
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent);
+}
+
+.expanded-content {
+  padding: 1rem;
+}
+
+.items-detail-wrap {
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.items-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 480px;
+}
+
+.items-detail-table th {
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.items-detail-table td {
+  padding: 0.45rem 0.65rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(42, 42, 74, 0.5);
+  vertical-align: middle;
+}
+
+.items-detail-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.expanded-totals {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.expanded-totals strong {
+  color: var(--text-primary);
+}
+
+/* Category badge */
+.category-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .main-content {

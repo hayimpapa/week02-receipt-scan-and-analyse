@@ -268,6 +268,124 @@ under the label:
 "## Week 2 - Receipt Analyser -
 Update 1 - Owner Auth and Proxy"
 
+## Week 2 - Receipt Analyser - Update 3 - My Receipts view
+
+Add a "My Receipts" tab/view to the
+Receipt Scanner & Analyser app.
+
+This view is only accessible when
+the user is logged in as owner
+(valid session token exists).
+
+If not logged in, the tab should
+either be hidden entirely or show
+a simple message:
+"Owner login required to view
+saved receipts."
+
+NAVIGATION:
+Add a third tab/view to the existing
+navigation alongside the main Scanner
+and About This Build tabs.
+Label: "My Receipts"
+
+MY RECEIPTS VIEW:
+
+TOP SUMMARY ROW:
+Show three summary cards at the top:
+- Total receipts saved
+- Total amount spent (all time)
+- Total GST paid (all time)
+
+FILTERS BAR:
+- Date range dropdown:
+  Last 7 days, Last 30 days,
+  Last 90 days, All time
+- Search box: filters by
+  merchant name
+- Category filter dropdown:
+  shows all categories from
+  the fixed category list
+
+RECEIPTS TABLE:
+Show one row per receipt with
+these columns:
+- Date (DD/MM/YYYY)
+- Merchant
+- Items (count of line items)
+- Total Amount (formatted as $0.00)
+- GST (formatted as $0.00)
+- Payment Method
+- Actions column with two buttons:
+  - "View" - expands the receipt
+    to show full line items
+  - "Delete" - deletes the receipt
+    and all its items from Supabase
+    with a confirmation prompt
+    before deleting
+
+EXPANDED RECEIPT VIEW:
+When user clicks "View" on a receipt
+row, expand it inline (or open a
+side panel) showing a detailed
+line items table:
+
+Line items table columns:
+- Product Name
+- Category (shown as coloured badge)
+- Quantity
+- Unit Price
+- Total Price
+- GST
+
+Show receipt subtotals at the bottom:
+- Total items
+- Receipt total
+- Total GST
+
+SORTING:
+Table should be sortable by clicking
+column headers:
+- Date (default: newest first)
+- Merchant (alphabetical)
+- Total Amount (highest first)
+
+PAGINATION:
+Show 20 receipts per page.
+Simple Previous / Next pagination
+at the bottom of the table.
+
+DATA:
+Fetch from existing api/receipts.js
+serverless function.
+Pass the active date range filter
+as a query parameter.
+Send session token in header
+as per existing auth pattern.
+
+If no receipts exist yet show a
+friendly empty state:
+"No receipts saved yet.
+Scan your first receipt to
+get started."
+
+DESIGN:
+- Consistent with existing dark
+  mode minimal styling
+- Category badges should use
+  distinct soft colours per
+  category for easy scanning
+- Mobile responsive - on small
+  screens the table scrolls
+  horizontally
+- Loading spinner while
+  fetching data
+
+Update PROMPTS.txt with this prompt
+under the label:
+"## Week 2 - Receipt Analyser -
+Update 3 - My Receipts view"
+
 ## Week 2 - Receipt Analyser - Update 2 - Move Supabase server-side
 
 Move all Supabase database calls from

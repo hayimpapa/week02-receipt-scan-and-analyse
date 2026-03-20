@@ -4,6 +4,7 @@ import NavBar from './components/NavBar';
 import ScanPage from './pages/ScanPage';
 import ReportsPage from './pages/ReportsPage';
 import AboutPage from './pages/AboutPage';
+import MyReceiptsPage from './pages/MyReceiptsPage';
 import './App.css';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<ScanPage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/my-receipts" element={<MyReceiptsPage />} />
               <Route path="/about" element={<AboutPage />} />
             </Routes>
           </main>

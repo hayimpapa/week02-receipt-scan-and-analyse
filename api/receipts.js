@@ -21,7 +21,7 @@ function getSupabaseClient() {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -39,6 +39,24 @@ export default async function handler(req, res) {
   const supabase = getSupabaseClient();
   if (!supabase) {
     return res.status(500).json({ error: 'Supabase not configured' });
+  }
+
+  // DELETE: remove a receipt by id (receipt_items cascade via FK)
+  if (req.method === 'DELETE') {
+    const { id } = req.query || {};
+    if (!id) {
+      return res.status(400).json({ error: 'Receipt id is required' });
+    }
+    try {
+      const { error } = await supabase
+        .from('receipts')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'Failed to delete receipt' });
+    }
   }
 
   const { range } = req.query || {};
