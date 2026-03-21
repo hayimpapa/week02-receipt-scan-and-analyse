@@ -26,9 +26,16 @@
   z-index: 100;
 }
 
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .nav-home-logo {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .home-logo {
@@ -40,10 +47,12 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--accent);
+  white-space: nowrap;
 }
 
 .nav-links {
   display: flex;
+  align-items: center;
   gap: 0.25rem;
 }
 
