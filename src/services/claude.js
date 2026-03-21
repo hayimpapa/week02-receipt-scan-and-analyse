@@ -1,4 +1,5 @@
 import { getSessionToken } from './auth';
+import { getApiBase } from './api';
 
 const CATEGORIES = [
   'Groceries', 'Fruit & Veg', 'Meat & Seafood',
@@ -54,7 +55,7 @@ Important:
 - GST amounts should be 0 if not explicitly shown on receipt
 - Use the category list provided — pick the best match for each item`;
 
-  const response = await fetch('/api/scan', {
+  const response = await fetch(`${getApiBase()}/api/scan`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

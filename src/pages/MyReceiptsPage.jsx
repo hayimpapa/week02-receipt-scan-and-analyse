@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSessionToken } from '../services/auth';
+import { getApiBase } from '../services/api';
 import { CATEGORIES } from '../services/claude';
 
 const PAGE_SIZE = 20;
@@ -75,7 +76,7 @@ export default function MyReceiptsPage() {
     try {
       const token = getSessionToken();
       const params = dateRange !== 'all' ? `?range=${dateRange}` : '';
-      const res = await fetch(`/api/receipts${params}`, {
+      const res = await fetch(`${getApiBase()}/api/receipts${params}`, {
         headers: { 'x-session-token': token },
       });
       if (!res.ok) {
@@ -96,7 +97,7 @@ export default function MyReceiptsPage() {
     if (!confirm(`Delete receipt from "${merchant}"?\nThis cannot be undone.`)) return;
     try {
       const token = getSessionToken();
-      const res = await fetch(`/api/receipts?id=${encodeURIComponent(id)}`, {
+      const res = await fetch(`${getApiBase()}/api/receipts?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: { 'x-session-token': token },
       });
