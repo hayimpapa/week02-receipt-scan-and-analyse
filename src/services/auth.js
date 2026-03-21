@@ -1,3 +1,5 @@
+import { getApiBase } from './api';
+
 const TOKEN_KEY = 'owner_session_token';
 
 export function getSessionToken() {
@@ -13,7 +15,7 @@ export function clearSession() {
 }
 
 export async function loginOwner(password) {
-  const response = await fetch('/api/auth', {
+  const response = await fetch(`${getApiBase()}/api/auth`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),

@@ -3,6 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { getSessionToken } from '../services/auth';
+import { getApiBase } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const DATE_RANGES = [
@@ -36,7 +37,7 @@ export default function ReportsPage() {
     const fetchReceipts = async () => {
       try {
         const token = getSessionToken();
-        const response = await fetch(`/api/receipts?range=${selectedRange.value}`, {
+        const response = await fetch(`${getApiBase()}/api/receipts?range=${selectedRange.value}`, {
           headers: {
             'x-session-token': token,
           },
