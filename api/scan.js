@@ -22,9 +22,12 @@ function getSupabaseClient() {
 
 function convertDateToISO(dateStr) {
   if (!dateStr) return dateStr;
-  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (match) {
-    const [, day, month, year] = match;
+    let [, day, month, year] = match;
+    if (year.length === 2) {
+      year = '20' + year;
+    }
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
   return dateStr;
