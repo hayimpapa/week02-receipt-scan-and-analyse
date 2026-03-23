@@ -21,7 +21,8 @@ function getSupabaseClient() {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET' && req.method !== 'DELETE') {
+  const allowed = ['GET', 'DELETE', 'POST', 'PUT'];
+  if (!allowed.includes(req.method)) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -39,6 +40,87 @@ export default async function handler(req, res) {
   const supabase = getSupabaseClient();
   if (!supabase) {
     return res.status(500).json({ error: 'Supabase not configured' });
+  }
+
+  // POST: check for duplicate receipt
+  if (req.method === 'POST') {
+    const { merchant, date, receipt_total } = req.body || {};
+    if (!merchant || !date) {
+      return res.status(400).json({ error: 'merchant and date are required' });
+    }
+    try {
+      const { data, error } = await supabase
+        .from('receipts')
+        .select('id, merchant, date, receipt_total')
+        .eq('date', date)
+        .eq('receipt_total', Number(receipt_total || 0));
+
+      if (error) throw error;
+
+      // Case-insensitive merchant match
+      const merchantLower = merchant.trim().toLowerCase();
+      const duplicates = (data || []).filter(
+        (r) => r.merchant?.trim().toLowerCase() === merchantLower
+      );
+
+      return res.status(200).json({ duplicates });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'Failed to check duplicates' });
+    }
+  }
+
+  // PUT: update an existing receipt and its items
+  if (req.method === 'PUT') {
+    const { id } = req.query || {};
+    if (!id) {
+      return res.status(400).json({ error: 'Receipt id is required' });
+    }
+    const { merchant, date, receipt_total, total_gst, payment_method, items } = req.body || {};
+    try {
+      // Update the receipt record
+      const { error: receiptError } = await supabase
+        .from('receipts')
+        .update({
+          merchant,
+          date,
+          receipt_total,
+          total_gst,
+          payment_method,
+        })
+        .eq('id', id);
+
+      if (receiptError) throw receiptError;
+
+      // Replace all items: delete existing, insert new
+      const { error: deleteError } = await supabase
+        .from('receipt_items')
+        .delete()
+        .eq('receipt_id', id);
+
+      if (deleteError) throw deleteError;
+
+      if (items && items.length > 0) {
+        const mapped = items.map((item) => ({
+          receipt_id: id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          gst: item.gst,
+          category: item.category,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('receipt_items')
+          .insert(mapped);
+
+        if (insertError) throw insertError;
+      }
+
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'Failed to update receipt' });
+    }
   }
 
   // DELETE: remove a receipt by id (receipt_items cascade via FK)

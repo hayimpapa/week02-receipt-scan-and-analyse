@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { CATEGORIES } from '../services/claude';
 
-export default function ReceiptReview({ receiptData, onSave, onRetake, saving }) {
+export default function ReceiptReview({
+  receiptData,
+  onSave,
+  onRetake,
+  onCancel,
+  saving,
+  duplicateWarning,
+  editMode,
+}) {
   const [data, setData] = useState({ ...receiptData });
 
   const updateField = (field, value) => {
@@ -29,9 +37,25 @@ export default function ReceiptReview({ receiptData, onSave, onRetake, saving })
     setData((prev) => ({ ...prev, receiptTotal: Math.round(total * 100) / 100, totalGST: Math.round(gst * 100) / 100 }));
   };
 
+  const saveLabel = editMode
+    ? 'Save Changes'
+    : duplicateWarning
+    ? 'Save Anyway'
+    : saving
+    ? 'Saving...'
+    : 'Save to Supabase';
+
   return (
     <div className="review-container">
-      <h2>Review Receipt</h2>
+      <h2>{editMode ? 'Edit Receipt' : 'Review Receipt'}</h2>
+
+      {duplicateWarning && (
+        <div className="duplicate-warning">
+          <p>
+            This receipt looks like it may already be saved (same merchant, date and total). Save anyway?
+          </p>
+        </div>
+      )}
 
       <div className="card">
         <div className="form-group">
@@ -81,7 +105,7 @@ export default function ReceiptReview({ receiptData, onSave, onRetake, saving })
                   onClick={() => deleteItem(index)}
                   title="Delete item"
                 >
-                  ×
+                  &times;
                 </button>
               </div>
               <div className="item-details">
@@ -149,20 +173,42 @@ export default function ReceiptReview({ receiptData, onSave, onRetake, saving })
       <div className="card totals-card">
         <div className="totals-row">
           <span>Receipt Total:</span>
-          <strong>${parseFloat(data.receiptTotal).toFixed(2)}</strong>
+          <div className="form-group small totals-input">
+            <input
+              type="number"
+              value={data.receiptTotal}
+              onChange={(e) => updateField('receiptTotal', parseFloat(e.target.value) || 0)}
+              step="0.01"
+              min="0"
+            />
+          </div>
         </div>
         <div className="totals-row">
           <span>Total GST:</span>
-          <strong>${parseFloat(data.totalGST).toFixed(2)}</strong>
+          <div className="form-group small totals-input">
+            <input
+              type="number"
+              value={data.totalGST}
+              onChange={(e) => updateField('totalGST', parseFloat(e.target.value) || 0)}
+              step="0.01"
+              min="0"
+            />
+          </div>
         </div>
       </div>
 
       <div className="review-actions">
-        <button className="btn btn-secondary" onClick={onRetake} disabled={saving}>
-          Retake
-        </button>
+        {onCancel ? (
+          <button className="btn btn-secondary" onClick={onCancel} disabled={saving}>
+            Cancel
+          </button>
+        ) : (
+          <button className="btn btn-secondary" onClick={onRetake} disabled={saving}>
+            {duplicateWarning ? 'Cancel' : 'Retake'}
+          </button>
+        )}
         <button className="btn btn-primary" onClick={() => onSave(data)} disabled={saving}>
-          {saving ? 'Saving...' : 'Save to Supabase'}
+          {saving ? 'Saving...' : saveLabel}
         </button>
       </div>
     </div>

@@ -33,6 +33,24 @@ function convertDateToISO(dateStr) {
   return dateStr;
 }
 
+async function checkDuplicateReceipt(supabase, receiptData) {
+  const date = convertDateToISO(receiptData.date);
+  const total = Number(receiptData.receiptTotal || 0);
+
+  const { data, error } = await supabase
+    .from('receipts')
+    .select('id, merchant, date, receipt_total')
+    .eq('date', date)
+    .eq('receipt_total', total);
+
+  if (error) return [];
+
+  const merchantLower = (receiptData.merchant || '').trim().toLowerCase();
+  return (data || []).filter(
+    (r) => r.merchant?.trim().toLowerCase() === merchantLower
+  );
+}
+
 async function saveReceiptToSupabase(supabase, receiptData) {
   const { data: receipt, error: receiptError } = await supabase
     .from('receipts')
@@ -155,14 +173,29 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    // Save to Supabase if configured
+    // Check for duplicates before saving
     let savedReceipt = null;
+    let duplicates = [];
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
+        duplicates = await checkDuplicateReceipt(supabase, receiptData);
+      } catch {
+        // Ignore duplicate check errors — proceed to save
+      }
+
+      // If duplicates found, return data without saving so user can decide
+      if (duplicates.length > 0) {
+        return res.status(200).json({
+          receipt: receiptData,
+          receiptId: null,
+          duplicates,
+        });
+      }
+
+      try {
         savedReceipt = await saveReceiptToSupabase(supabase, receiptData);
       } catch (err) {
-        // Return the extracted data even if Supabase save fails, but include the error
         return res.status(200).json({
           receipt: receiptData,
           receiptId: null,

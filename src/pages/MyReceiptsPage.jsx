@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getSessionToken } from '../services/auth';
 import { getApiBase } from '../services/api';
 import { CATEGORIES } from '../services/claude';
+import ReceiptReview from '../components/ReceiptReview';
 
 const PAGE_SIZE = 20;
 
@@ -34,6 +35,24 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+function isoToDisplay(dateStr) {
+  if (!dateStr) return '';
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  return dateStr;
+}
+
+function displayToISO(dateStr) {
+  if (!dateStr) return dateStr;
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (match) {
+    let [, day, month, year] = match;
+    if (year.length === 2) year = '20' + year;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return dateStr;
+}
+
 function formatCurrency(amount) {
   return `$${Number(amount || 0).toFixed(2)}`;
 }
@@ -48,8 +67,29 @@ function CategoryBadge({ category }) {
 }
 
 function SortIcon({ active, dir }) {
-  if (!active) return <span className="sort-icon">↕</span>;
-  return <span className="sort-icon sort-icon--active">{dir === 'asc' ? '↑' : '↓'}</span>;
+  if (!active) return <span className="sort-icon">&updownarrow;</span>;
+  return <span className="sort-icon sort-icon--active">{dir === 'asc' ? '\u2191' : '\u2193'}</span>;
+}
+
+// Convert a Supabase receipt record to the format ReceiptReview expects
+function receiptToReviewData(receipt) {
+  return {
+    id: receipt.id,
+    merchant: receipt.merchant || '',
+    date: isoToDisplay(receipt.date),
+    paymentMethod: receipt.payment_method || '',
+    receiptTotal: Number(receipt.receipt_total || 0),
+    totalGST: Number(receipt.total_gst || 0),
+    items: (receipt.receipt_items || []).map((item) => ({
+      id: item.id,
+      productName: item.product_name || '',
+      quantity: Number(item.quantity || 0),
+      unitPrice: Number(item.unit_price || 0),
+      totalPrice: Number(item.total_price || 0),
+      gst: Number(item.gst || 0),
+      suggestedCategory: item.category || 'Other',
+    })),
+  };
 }
 
 export default function MyReceiptsPage() {
@@ -64,6 +104,9 @@ export default function MyReceiptsPage() {
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState(null);
+  const [editingReceipt, setEditingReceipt] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editSuccess, setEditSuccess] = useState(null);
 
   useEffect(() => {
     if (!isOwner) return;
@@ -109,6 +152,65 @@ export default function MyReceiptsPage() {
       if (expandedId === id) setExpandedId(null);
     } catch (err) {
       alert(`Error: ${err.message}`);
+    }
+  }
+
+  function startEditing(receipt) {
+    setEditingReceipt(receipt);
+    setExpandedId(null);
+    setEditSuccess(null);
+  }
+
+  async function handleEditSave(data) {
+    const receiptId = editingReceipt.id;
+    setEditSaving(true);
+    setError(null);
+    try {
+      const token = getSessionToken();
+      const isoDate = displayToISO(data.date);
+      const body = {
+        merchant: data.merchant,
+        date: isoDate,
+        receipt_total: data.receiptTotal,
+        total_gst: data.totalGST,
+        payment_method: data.paymentMethod,
+        items: (data.items || []).map((item) => ({
+          product_name: item.productName,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total_price: item.totalPrice,
+          gst: item.gst,
+          category: item.suggestedCategory,
+        })),
+      };
+
+      const res = await fetch(
+        `${getApiBase()}/api/receipts?id=${encodeURIComponent(receiptId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-token': token,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Failed to update receipt');
+      }
+
+      setEditingReceipt(null);
+      setEditSuccess('Receipt updated successfully!');
+      // Refresh data from server
+      await fetchReceipts();
+      // Auto-dismiss success after 3 seconds
+      setTimeout(() => setEditSuccess(null), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -171,9 +273,37 @@ export default function MyReceiptsPage() {
     );
   }
 
+  // Edit mode: show the ReceiptReview form for the selected receipt
+  if (editingReceipt) {
+    return (
+      <div className="my-receipts-page">
+        <ReceiptReview
+          receiptData={receiptToReviewData(editingReceipt)}
+          onSave={handleEditSave}
+          onCancel={() => setEditingReceipt(null)}
+          saving={editSaving}
+          editMode
+        />
+        {error && (
+          <div className="error-banner" style={{ marginTop: '1rem' }}>
+            <p>{error}</p>
+            <button onClick={() => setError(null)}>Dismiss</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="my-receipts-page">
       <h2>My Receipts</h2>
+
+      {editSuccess && (
+        <div className="success-banner">
+          <p>{editSuccess}</p>
+          <button onClick={() => setEditSuccess(null)}>Dismiss</button>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="stats-grid">
@@ -290,6 +420,12 @@ export default function MyReceiptsPage() {
                           }
                         >
                           {expandedId === receipt.id ? 'Close' : 'View'}
+                        </button>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => startEditing(receipt)}
+                        >
+                          Edit
                         </button>
                         <button
                           className="btn btn-danger btn-sm"
