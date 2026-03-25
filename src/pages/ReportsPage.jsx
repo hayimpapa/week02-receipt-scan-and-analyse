@@ -1,16 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend,
 } from 'recharts';
 import { getSessionToken } from '../services/auth';
 import { getApiBase } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const DATE_RANGES = [
-  { label: 'Last 7 days', value: '7d' },
-  { label: 'Last 30 days', value: '30d' },
-  { label: 'Last 90 days', value: '90d' },
-  { label: 'All time', value: 'all' },
+  { label: 'MTD', value: 'mtd' },
+  { label: 'YTD', value: 'ytd' },
+  { label: '7 Days', value: '7d' },
+  { label: '30 Days', value: '30d' },
+  { label: '90 Days', value: '90d' },
+  { label: 'All Time', value: 'all' },
 ];
 
 const CHART_COLORS = [
@@ -21,12 +24,26 @@ const CHART_COLORS = [
   '#e9d5ff', '#f3e8ff',
 ];
 
+const RADIAN = Math.PI / 180;
+function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
+  if (percent < 0.04) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+}
+
 export default function ReportsPage() {
   const { isOwner } = useAuth();
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRange, setSelectedRange] = useState(DATE_RANGES[1]);
+  const [selectedRange, setSelectedRange] = useState(DATE_RANGES[0]);
   const [error, setError] = useState(null);
+  const [chartType, setChartType] = useState('bar');
 
   useEffect(() => {
     if (!isOwner) {
@@ -124,20 +141,39 @@ export default function ReportsPage() {
     <div className="reports-page">
       <h2>Reports</h2>
 
-      <div className="date-range-filter">
-        {DATE_RANGES.map((range) => (
+      <div className="reports-controls">
+        <div className="date-range-filter">
+          {DATE_RANGES.map((range) => (
+            <button
+              key={range.value}
+              className={`btn btn-filter ${selectedRange.value === range.value ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedRange(range);
+                setLoading(true);
+                setError(null);
+              }}
+            >
+              {range.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="chart-type-toggle">
           <button
-            key={range.label}
-            className={`btn btn-filter ${selectedRange.label === range.label ? 'active' : ''}`}
-            onClick={() => {
-              setSelectedRange(range);
-              setLoading(true);
-              setError(null);
-            }}
+            className={`btn btn-filter ${chartType === 'bar' ? 'active' : ''}`}
+            onClick={() => setChartType('bar')}
+            aria-label="Bar chart"
           >
-            {range.label}
+            Bar
           </button>
-        ))}
+          <button
+            className={`btn btn-filter ${chartType === 'pie' ? 'active' : ''}`}
+            onClick={() => setChartType('pie')}
+            aria-label="Pie chart"
+          >
+            Pie
+          </button>
+        </div>
       </div>
 
       <div className="stats-grid">
@@ -159,23 +195,54 @@ export default function ReportsPage() {
       {stats.categoryData.length > 0 ? (
         <div className="card chart-card">
           <h3>Spending by Category</h3>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={stats.categoryData} layout="vertical" margin={{ left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis type="number" tick={{ fill: '#aaa' }} tickFormatter={(v) => `$${v}`} />
-              <YAxis type="category" dataKey="name" tick={{ fill: '#aaa', fontSize: 12 }} width={130} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-                formatter={(value) => [`$${value.toFixed(2)}`, 'Spent']}
-              />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {stats.categoryData.map((_, index) => (
-                  <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+
+          {chartType === 'bar' ? (
+            <ResponsiveContainer width="100%" height={Math.max(300, stats.categoryData.length * 36)}>
+              <BarChart data={stats.categoryData} layout="vertical" margin={{ left: 10, right: 16, top: 4, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis type="number" tick={{ fill: '#aaa', fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                <YAxis type="category" dataKey="name" tick={{ fill: '#aaa', fontSize: 11 }} width={110} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: '8px' }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value) => [`$${value.toFixed(2)}`, 'Spent']}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {stats.categoryData.map((_, index) => (
+                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={360}>
+              <PieChart>
+                <Pie
+                  data={stats.categoryData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="45%"
+                  outerRadius="65%"
+                  labelLine={false}
+                  label={PieLabel}
+                >
+                  {stats.categoryData.map((_, index) => (
+                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: '8px' }}
+                  labelStyle={{ color: '#fff' }}
+                  formatter={(value) => [`$${value.toFixed(2)}`, 'Spent']}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: '11px', color: '#aaa', paddingTop: '8px' }}
+                  formatter={(value) => <span style={{ color: '#ccc' }}>{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       ) : (
         <div className="card">
