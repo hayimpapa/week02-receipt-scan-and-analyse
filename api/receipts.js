@@ -157,6 +157,13 @@ export default async function handler(req, res) {
         cutoff.setDate(cutoff.getDate() - days);
         const cutoffStr = cutoff.toISOString().split('T')[0];
         query = query.gte('date', cutoffStr);
+      } else if (range === 'mtd') {
+        const now = new Date();
+        const cutoffStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        query = query.gte('date', cutoffStr);
+      } else if (range === 'ytd') {
+        const cutoffStr = `${new Date().getFullYear()}-01-01`;
+        query = query.gte('date', cutoffStr);
       }
     }
 
