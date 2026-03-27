@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CATEGORIES } from '../services/claude';
 
 export default function ReceiptReview({
@@ -31,11 +31,38 @@ export default function ReceiptReview({
     }));
   };
 
-  const recalcTotal = () => {
+  // Auto-recalculate totals when line items change
+  useEffect(() => {
     const total = data.items.reduce((sum, item) => sum + (parseFloat(item.totalPrice) || 0), 0);
     const gst = data.items.reduce((sum, item) => sum + (parseFloat(item.gst) || 0), 0);
-    setData((prev) => ({ ...prev, receiptTotal: Math.round(total * 100) / 100, totalGST: Math.round(gst * 100) / 100 }));
-  };
+    const newTotal = Math.round(total * 100) / 100;
+    const newGST = Math.round(gst * 100) / 100;
+    if (newTotal !== data.receiptTotal || newGST !== data.totalGST) {
+      setData((prev) => ({ ...prev, receiptTotal: newTotal, totalGST: newGST }));
+    }
+  }, [data.items]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Convert DD/MM/YYYY display date to YYYY-MM-DD for the date input
+  const toInputDate = useCallback((displayDate) => {
+    if (!displayDate) return '';
+    const match = displayDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (match) {
+      let [, day, month, year] = match;
+      if (year.length === 2) year = '20' + year;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    // Already in ISO format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(displayDate)) return displayDate;
+    return '';
+  }, []);
+
+  // Convert YYYY-MM-DD input value back to DD/MM/YYYY for storage
+  const fromInputDate = useCallback((isoDate) => {
+    if (!isoDate) return '';
+    const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+    return isoDate;
+  }, []);
 
   const saveLabel = editMode
     ? 'Save Changes'
@@ -71,10 +98,9 @@ export default function ReceiptReview({
           <div className="form-group">
             <label>Date</label>
             <input
-              type="text"
-              value={data.date}
-              onChange={(e) => updateField('date', e.target.value)}
-              placeholder="DD/MM/YYYY"
+              type="date"
+              value={toInputDate(data.date)}
+              onChange={(e) => updateField('date', fromInputDate(e.target.value))}
             />
           </div>
           <div className="form-group">
@@ -165,9 +191,6 @@ export default function ReceiptReview({
           ))}
         </div>
 
-        <button className="btn btn-secondary" onClick={recalcTotal} style={{ marginTop: '1rem' }}>
-          Recalculate Totals
-        </button>
       </div>
 
       <div className="card totals-card">

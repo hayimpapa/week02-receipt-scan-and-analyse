@@ -228,7 +228,10 @@ export default function MyReceiptsPage() {
     let list = [...receipts];
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      list = list.filter(r => r.merchant?.toLowerCase().includes(q));
+      list = list.filter(r =>
+        r.merchant?.toLowerCase().includes(q) ||
+        r.receipt_items?.some(item => item.product_name?.toLowerCase().includes(q))
+      );
     }
     if (categoryFilter) {
       list = list.filter(r =>
@@ -339,7 +342,7 @@ export default function MyReceiptsPage() {
         <input
           className="filter-search"
           type="text"
-          placeholder="Search merchant..."
+          placeholder="Search merchant or product..."
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1); }}
         />
