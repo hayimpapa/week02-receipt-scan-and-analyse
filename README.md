@@ -8,6 +8,64 @@ GitHub: [https://github.com/hayimpapa/week02-receipt-scan-and-analyse](https://g
 
 ---
 
+## Features
+
+- **Receipt Scanning** — Capture receipts using your device camera with live preview, confirmation, and retake
+- **AI Extraction** — Claude AI (claude-sonnet-4-20250514) extracts merchant, items, prices, GST, and categories from receipt images
+- **Duplicate Detection** — Automatically detects duplicate receipts (same merchant, date, and total) before saving
+- **Review & Edit** — Edit extracted data before saving to the database
+- **Spending Reports** — Bar and pie charts with date range filters (7d, 30d, 90d, MTD, YTD, all time)
+- **Receipt Management** — Search, filter, sort, paginate, view, edit, and delete saved receipts
+- **Guest & Owner Modes** — Full UI visible to guests; scanning and saving require owner authentication
+- **18 Item Categories** — Groceries, Fruit & Veg, Meat & Seafood, Deli & Bakery, Dairy & Eggs, Frozen Foods, Snacks & Confectionery, Beverages, Alcohol, Household & Cleaning, Health & Beauty, Baby & Kids, Pet Supplies, Clothing, Electronics, Dining Out, Fuel, Other
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, React Router 7, Recharts 3 |
+| Build | Vite 7 |
+| Backend | Vercel Serverless Functions (Node.js) |
+| AI | Anthropic Claude API (Vision) |
+| Database | Supabase (PostgreSQL) |
+| Analytics | Google Analytics GA4 |
+| Auth | HMAC-SHA256 signed session tokens |
+
+## Project Structure
+
+```
+├── api/                        # Vercel serverless functions
+│   ├── auth.js                 # Owner password validation & token generation
+│   ├── scan.js                 # Claude AI receipt extraction + save to Supabase
+│   ├── receipts.js             # CRUD operations for receipts
+│   └── save.js                 # Standalone receipt save endpoint
+├── src/
+│   ├── components/
+│   │   ├── CameraCapture.jsx   # Device camera access & photo capture
+│   │   ├── NavBar.jsx          # Navigation bar with lock icon
+│   │   ├── OwnerModal.jsx      # Password entry modal
+│   │   └── ReceiptReview.jsx   # Editable receipt form
+│   ├── contexts/
+│   │   └── AuthContext.jsx     # Owner mode state management
+│   ├── pages/
+│   │   ├── ScanPage.jsx        # Camera → extract → review → save flow
+│   │   ├── ReportsPage.jsx     # Spending analytics with charts
+│   │   ├── MyReceiptsPage.jsx  # Receipt list with search/filter/sort
+│   │   └── AboutPage.jsx       # Project information
+│   ├── services/
+│   │   ├── api.js              # API base path helper
+│   │   ├── auth.js             # Session token management
+│   │   ├── claude.js           # Receipt extraction prompt & categories
+│   │   └── analytics.js        # GA4 event tracking
+│   ├── App.jsx                 # Router setup with 4 routes
+│   ├── App.css                 # Main styles
+│   ├── index.css               # Global styles
+│   └── main.jsx                # React entry point
+├── vercel.json                 # Vercel routing rewrites
+├── vite.config.js              # Vite config (base: /week02/)
+└── PROMPTS.txt                 # Original prompts used to build the app
+```
+
 ## Guest vs Owner Mode
 
 The app has two modes:
